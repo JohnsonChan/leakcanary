@@ -15,6 +15,8 @@
  */
 package com.squareup.leakcanary;
 
+import android.os.Process;
+
 import java.io.File;
 import java.lang.ref.ReferenceQueue;
 import java.util.Set;
@@ -81,8 +83,9 @@ public final class RefWatcher {
     checkNotNull(watchedReference, "watchedReference");
     checkNotNull(referenceName, "referenceName");
     final long watchStartNanoTime = System.nanoTime();
-    String key = UUID.randomUUID().toString();
+    String key = UUID.randomUUID().toString(); // 产生唯一的key
     retainedKeys.add(key);
+    // 把activity对象封装成带key值和带引用队列(ReferenceQueue)的KeyedWeakReference对象
     final KeyedWeakReference reference =
         new KeyedWeakReference(watchedReference, key, referenceName, queue);
 
@@ -102,18 +105,18 @@ public final class RefWatcher {
     long gcStartNanoTime = System.nanoTime();
     long watchDurationMs = NANOSECONDS.toMillis(gcStartNanoTime - watchStartNanoTime);
 
-    removeWeaklyReachableReferences();
+    removeWeaklyReachableReferences(); // 清理掉被回收被放入队列的Activity
 
     if (debuggerControl.isDebuggerAttached()) {
       // The debugger can create false leaks.
       return RETRY;
     }
-    if (gone(reference)) {
+    if (gone(reference)) { // 判断key列表里是否还存在，存在说明还没被回收，不存在说明被回收了。
       return DONE;
     }
     gcTrigger.runGc();
-    removeWeaklyReachableReferences();
-    if (!gone(reference)) {
+    removeWeaklyReachableReferences(); // gc后再清理掉被回收被放入队列的Activity
+    if (!gone(reference)) { // 如果发现activity对应的key还在，正式确定没被回收，内存泄漏了，进入堆栈分析
       long startDumpHeap = System.nanoTime();
       long gcDurationMs = NANOSECONDS.toMillis(startDumpHeap - gcStartNanoTime);
 
@@ -134,9 +137,12 @@ public final class RefWatcher {
     return !retainedKeys.contains(reference.key);
   }
 
+  // 删除可触及状态的弱应用？
   private void removeWeaklyReachableReferences() {
     // WeakReferences are enqueued as soon as the object to which they point to becomes weakly
     // reachable. This is before finalization or garbage collection has actually happened.
+    // 如果Activity被回收了，对应的弱应用就会被放到队列里
+    // 从队列里找出被回收的Activity删除对应的key,剩下的key对应的Activity就是没被回收的
     KeyedWeakReference ref;
     while ((ref = (KeyedWeakReference) queue.poll()) != null) {
       retainedKeys.remove(ref.key);

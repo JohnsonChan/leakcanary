@@ -19,6 +19,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+// 用于控制Toast展示
 public final class FutureResult<T> {
 
   private final AtomicReference<T> resultHolder;

@@ -18,6 +18,7 @@ package com.squareup.leakcanary;
 import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Process;
 
 public abstract class AbstractAnalysisResultService extends IntentService {
 
@@ -46,10 +47,10 @@ public abstract class AbstractAnalysisResultService extends IntentService {
     HeapDump heapDump = (HeapDump) intent.getSerializableExtra(HEAP_DUMP_EXTRA);
     AnalysisResult result = (AnalysisResult) intent.getSerializableExtra(RESULT_EXTRA);
     try {
-      onHeapAnalyzed(heapDump, result);
+      onHeapAnalyzed(heapDump, result); // 解析拼接结果
     } finally {
       //noinspection ResultOfMethodCallIgnored
-      heapDump.heapDumpFile.delete();
+      heapDump.heapDumpFile.delete(); // 删除文件
     }
   }
 

@@ -2,6 +2,7 @@ package com.squareup.leakcanary;
 
 import android.util.Log;
 
+// logcat日志
 public final class CanaryLog {
 
   private static volatile Logger logger = new DefaultLogger();

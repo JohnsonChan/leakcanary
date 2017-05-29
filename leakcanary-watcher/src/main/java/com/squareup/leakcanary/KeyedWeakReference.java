@@ -21,6 +21,7 @@ import java.lang.ref.WeakReference;
 import static com.squareup.leakcanary.Preconditions.checkNotNull;
 
 /** @see {@link HeapDump#referenceKey}. */
+//用于将activity和key封装成KeyedWeakReference，并关联ReferenceQueue
 final class KeyedWeakReference extends WeakReference<Object> {
   public final String key;
   public final String name;

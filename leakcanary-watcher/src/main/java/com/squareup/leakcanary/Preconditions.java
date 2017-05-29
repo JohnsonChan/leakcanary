@@ -15,12 +15,14 @@
  */
 package com.squareup.leakcanary;
 
+// 先决条件
 final class Preconditions {
 
   /**
    * Returns instance unless it's null.
    *
    * @throws NullPointerException if instance is null
+   * 判空
    */
   static <T> T checkNotNull(T instance, String name) {
     if (instance == null) {

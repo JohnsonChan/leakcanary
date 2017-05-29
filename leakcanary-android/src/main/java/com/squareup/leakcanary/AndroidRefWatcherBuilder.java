@@ -8,6 +8,7 @@ import static com.squareup.leakcanary.RefWatcher.DISABLED;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /** A {@link RefWatcherBuilder} with appropriate Android defaults. */
+// RefWatcher构建器
 public final class AndroidRefWatcherBuilder extends RefWatcherBuilder<AndroidRefWatcherBuilder> {
 
   private static final long DEFAULT_WATCH_DELAY_MILLIS = SECONDS.toMillis(5);

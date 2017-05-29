@@ -34,6 +34,7 @@ public final class ServiceHeapDumpListener implements HeapDump.Listener {
     this.context = checkNotNull(context, "context").getApplicationContext();
   }
 
+  // 监听到有堆栈过来，启动HeapAnayzerService分析
   @Override public void analyze(HeapDump heapDump) {
     checkNotNull(heapDump, "heapDump");
     HeapAnalyzerService.runAnalysis(context, heapDump, listenerServiceClass);

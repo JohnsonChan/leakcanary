@@ -18,6 +18,7 @@ package com.squareup.leakcanary;
 import java.io.File;
 
 /** Dumps the heap into a file. */
+// Dumps的堆栈信息到文件里的接口
 public interface HeapDumper {
   HeapDumper NONE = new HeapDumper() {
     @Override public File dumpHeap() {
@@ -30,6 +31,7 @@ public interface HeapDumper {
   /**
    * @return a {@link File} referencing the dumped heap, or {@link #RETRY_LATER} if the heap could
    * not be dumped.
+   * 实现dump堆栈到文件
    */
   File dumpHeap();
 }

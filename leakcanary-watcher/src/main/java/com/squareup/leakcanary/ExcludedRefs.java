@@ -29,6 +29,8 @@ import static java.util.Collections.unmodifiableMap;
  * This class lets you ignore known memory leaks that you known about. If the shortest path
  * matches {@link ExcludedRefs}, than the heap analyzer should look for a longer path with nothing
  * matching in {@link ExcludedRefs}.
+ * 不考虑，可以忽略的内存泄漏
+ * 这个类可以让我们忽略一些已经知道的内存泄漏， AndroidExcludedRefs就枚举了和android版本或手机厂商rom相关的一些内存泄漏
  */
 public final class ExcludedRefs implements Serializable {
 

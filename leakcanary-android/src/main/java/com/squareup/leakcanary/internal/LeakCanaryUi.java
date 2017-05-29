@@ -21,6 +21,7 @@ import android.util.DisplayMetrics;
 
 import static android.graphics.PorterDuff.Mode.CLEAR;
 
+// UI工具类
 final class LeakCanaryUi {
   static final int LIGHT_GREY = 0xFFbababa;
   static final int ROOT_COLOR = 0xFF84a6c5;

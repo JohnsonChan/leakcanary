@@ -34,6 +34,7 @@ import static android.widget.Toast.LENGTH_LONG;
 import static com.squareup.leakcanary.internal.LeakCanaryInternals.setEnabledBlocking;
 
 @TargetApi(M) //
+// 高版本权限获取兼容
 public class RequestStoragePermissionActivity extends Activity {
 
   public static PendingIntent createPendingIntent(Context context) {

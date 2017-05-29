@@ -51,6 +51,7 @@ import static com.squareup.leakcanary.internal.LeakCanaryInternals.SAMSUNG;
  * Most app developers should use {@link #createAppDefaults()}. However, you can also pick the
  * leaks you want to ignore by creating an {@link EnumSet} that matches your needs and calling
  * {@link #createBuilder(EnumSet)}
+ * Android系统或手机厂商特有到一些内存泄漏
  */
 @SuppressWarnings({ "unused", "WeakerAccess" }) // Public API.
 public enum AndroidExcludedRefs {

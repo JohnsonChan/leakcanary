@@ -37,9 +37,11 @@ import static com.squareup.leakcanary.internal.LeakCanaryInternals.showNotificat
  *
  * You can extend this class and override {@link #afterDefaultHandling(HeapDump, AnalysisResult,
  * String)} to add custom behavior, e.g. uploading the heap dump.
+ * 运行在App主进程
  */
 public class DisplayLeakService extends AbstractAnalysisResultService {
 
+  // 主要就是在通知栏显示内存泄漏信息
   @Override protected final void onHeapAnalyzed(HeapDump heapDump, AnalysisResult result) {
     String leakInfo = leakInfo(this, heapDump, result, true);
     CanaryLog.d("%s", leakInfo);
@@ -47,8 +49,8 @@ public class DisplayLeakService extends AbstractAnalysisResultService {
     boolean resultSaved = false;
     boolean shouldSaveResult = result.leakFound || result.failure != null;
     if (shouldSaveResult) {
-      heapDump = renameHeapdump(heapDump);
-      resultSaved = saveResult(heapDump, result);
+      heapDump = renameHeapdump(heapDump); // 将分析过得文件改名
+      resultSaved = saveResult(heapDump, result); // 将结果写到同名的*.result文件
     }
 
     PendingIntent pendingIntent;
@@ -56,6 +58,7 @@ public class DisplayLeakService extends AbstractAnalysisResultService {
     String contentText;
 
     if (!shouldSaveResult) {
+      // 没有泄漏
       contentTitle = getString(R.string.leak_canary_no_leak_title);
       contentText = getString(R.string.leak_canary_no_leak_text);
       pendingIntent = null;
@@ -82,9 +85,10 @@ public class DisplayLeakService extends AbstractAnalysisResultService {
     // New notification id every second.
     int notificationId = (int) (SystemClock.uptimeMillis() / 1000);
     showNotification(this, contentTitle, contentText, pendingIntent, notificationId);
-    afterDefaultHandling(heapDump, result, leakInfo);
+    afterDefaultHandling(heapDump, result, leakInfo); // 处理我们想要的逻辑
   }
 
+  // 将HeapDump, AnalysisResult写文件
   private boolean saveResult(HeapDump heapDump, AnalysisResult result) {
     File resultFile = new File(heapDump.heapDumpFile.getParentFile(),
         heapDump.heapDumpFile.getName() + ".result");
@@ -108,6 +112,7 @@ public class DisplayLeakService extends AbstractAnalysisResultService {
     return false;
   }
 
+  // 从命名hprof文件
   private HeapDump renameHeapdump(HeapDump heapDump) {
     String fileName =
         new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss_SSS'.hprof'", Locale.US).format(new Date());
@@ -127,6 +132,7 @@ public class DisplayLeakService extends AbstractAnalysisResultService {
    * You can override this method and do a blocking call to a server to upload the leak trace and
    * the heap dump. Don't forget to check {@link AnalysisResult#leakFound} and {@link
    * AnalysisResult#excludedLeak} first.
+   * 可以重写此方法做报告的上报
    */
   protected void afterDefaultHandling(HeapDump heapDump, AnalysisResult result, String leakInfo) {
   }

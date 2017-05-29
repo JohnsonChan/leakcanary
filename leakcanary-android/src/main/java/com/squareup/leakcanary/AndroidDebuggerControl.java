@@ -19,6 +19,6 @@ import android.os.Debug;
 
 public final class AndroidDebuggerControl implements DebuggerControl {
   @Override public boolean isDebuggerAttached() {
-    return Debug.isDebuggerConnected();
+    return Debug.isDebuggerConnected(); // 函数返回的是是否是调试状态
   }
 }

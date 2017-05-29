@@ -16,6 +16,7 @@
 package com.example.leakcanary;
 
 import android.app.Application;
+import android.os.Process;
 import android.os.StrictMode;
 
 import com.squareup.leakcanary.LeakCanary;
@@ -31,9 +32,9 @@ public class ExampleApplication extends Application {
       // release环境的LeakCanary,LeakCanary.isInAnalyzerProcess(this)直接返回false
       return;
     }
-
     enabledStrictMode();
     LeakCanary.install(this);
+
   }
 
   private static void enabledStrictMode() {

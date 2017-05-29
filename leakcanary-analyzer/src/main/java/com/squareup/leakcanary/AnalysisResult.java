@@ -33,18 +33,22 @@ public final class AnalysisResult implements Serializable {
     return new AnalysisResult(false, false, null, null, failure, 0, analysisDurationMs);
   }
 
-  /** True if a leak was found in the heap dump. */
+  /** True if a leak was found in the heap dump.
+   * true.代表在dump堆栈文件里找到泄漏
+   */
   public final boolean leakFound;
 
   /**
    * True if {@link #leakFound} is true and the only path to the leaking reference is
    * through excluded references. Usually, that means you can safely ignore this report.
+   * true,代表在找到可以忽略度泄漏
    */
   public final boolean excludedLeak;
 
   /**
    * Class name of the object that leaked if {@link #leakFound} is true, null otherwise.
    * The class name format is the same as what would be returned by {@link Class#getName()}.
+   * 泄漏的类的名称
    */
   public final String className;
 
@@ -54,18 +58,24 @@ public final class AnalysisResult implements Serializable {
    */
   public final LeakTrace leakTrace;
 
-  /** Null unless the analysis failed. */
+  /** Null unless the analysis failed.
+   * 不为空说明分析失败
+   */
   public final Throwable failure;
 
   /**
    * The number of bytes which would be freed if all references to the leaking object were
    * released. 0 if {@link #leakFound} is false.
+   * 泄漏的类释放，所有关联的类占用的大小
    */
   public final long retainedHeapSize;
 
-  /** Total time spent analyzing the heap. */
+  /** Total time spent analyzing the heap.
+   * 分析花的时间
+   */
   public final long analysisDurationMs;
 
+  // 构造方法
   private AnalysisResult(boolean leakFound, boolean excludedLeak, String className,
       LeakTrace leakTrace, Throwable failure, long retainedHeapSize, long analysisDurationMs) {
     this.leakFound = leakFound;

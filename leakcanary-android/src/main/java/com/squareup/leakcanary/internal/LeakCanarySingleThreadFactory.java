@@ -19,6 +19,7 @@ import java.util.concurrent.ThreadFactory;
 
 /**
  * This is intended to only be used with a single thread executor.
+ * 实现线程工厂，用于创建线程名为LeakCanary-的线程
  */
 final class LeakCanarySingleThreadFactory implements ThreadFactory {
 

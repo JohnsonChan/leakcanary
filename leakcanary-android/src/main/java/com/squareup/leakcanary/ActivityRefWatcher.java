@@ -18,6 +18,7 @@ package com.squareup.leakcanary;
 import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
+import android.os.Process;
 
 import static com.squareup.leakcanary.Preconditions.checkNotNull;
 
@@ -54,6 +55,7 @@ public final class ActivityRefWatcher {
         }
 
         @Override public void onActivityDestroyed(Activity activity) {
+            // 最关键的，activity被销毁时，进行检查
           ActivityRefWatcher.this.onActivityDestroyed(activity);
         }
       };
@@ -75,7 +77,7 @@ public final class ActivityRefWatcher {
   }
 
   public void watchActivities() {
-    // Make sure you don't get installed twice.
+    // 避免监听两次,application里维护着ArrayList<ActivityLifecycleCallbacks>，注册两次会有两次回调
     stopWatchingActivities();
     application.registerActivityLifecycleCallbacks(lifecycleCallbacks);
   }

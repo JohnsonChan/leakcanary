@@ -83,7 +83,9 @@ public final class DefaultLeakDirectoryProvider implements LeakDirectoryProvider
     return files;
   }
 
+  // 返回准备写入的文件
   @Override public File newHeapDumpFile() {
+    // 从内置外置存储目录过滤后缀为_pending.hprof的文件
     List<File> pendingHeapDumps = listFiles(new FilenameFilter() {
       @Override public boolean accept(File dir, String filename) {
         return filename.endsWith(PENDING_HEAPDUMP_SUFFIX);
@@ -93,6 +95,7 @@ public final class DefaultLeakDirectoryProvider implements LeakDirectoryProvider
     // If a new heap dump file has been created recently and hasn't been processed yet, we skip.
     // Otherwise we move forward and assume that the analyzer process crashes. The file will
     // eventually be removed with heap dump file rotation.
+    // 如果文件更新时间距离现在还不到10分钟，跳过
     for (File file : pendingHeapDumps) {
       if (System.currentTimeMillis() - file.lastModified() < ANALYSIS_MAX_DURATION_MS) {
         CanaryLog.d("Could not dump heap, previous analysis still is in progress.");
@@ -104,7 +107,9 @@ public final class DefaultLeakDirectoryProvider implements LeakDirectoryProvider
 
     File storageDirectory = externalStorageDirectory();
     if (!directoryWritableAfterMkdirs(storageDirectory)) {
+      // 外部文件没创建或不可写，尝试获取权限和原因，并使用内部存储的
       if (!hasStoragePermission()) {
+        // 没权限获取权限
         CanaryLog.d("WRITE_EXTERNAL_STORAGE permission not granted");
         requestWritePermissionNotification();
       } else {
@@ -112,6 +117,7 @@ public final class DefaultLeakDirectoryProvider implements LeakDirectoryProvider
         if (!Environment.MEDIA_MOUNTED.equals(state)) {
           CanaryLog.d("External storage not mounted, state: %s", state);
         } else {
+          // 文件被挂载
           CanaryLog.d("Could not create heap dump directory in external storage: [%s]",
               storageDirectory.getAbsolutePath());
         }
@@ -126,9 +132,11 @@ public final class DefaultLeakDirectoryProvider implements LeakDirectoryProvider
     }
     // If two processes from the same app get to this step at the same time, they could both
     // create a heap dump. This is an edge case we ignore.
+    // 优先使用外部存储
     return new File(storageDirectory, UUID.randomUUID().toString() + PENDING_HEAPDUMP_SUFFIX);
   }
 
+  // 清空
   @Override public void clearLeakDirectory() {
     List<File> allFilesExceptPending = listFiles(new FilenameFilter() {
       @Override public boolean accept(File dir, String filename) {
@@ -170,22 +178,27 @@ public final class DefaultLeakDirectoryProvider implements LeakDirectoryProvider
     showNotification(context, contentTitle, contentText, pendingIntent, 0xDEAFBEEF);
   }
 
+  // 获取外置路径
   private File externalStorageDirectory() {
     File downloadsDirectory = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS);
     return new File(downloadsDirectory, "leakcanary-" + context.getPackageName());
   }
 
+  // 获取内置路径
   private File appStorageDirectory() {
     File appFilesDirectory = context.getFilesDir();
     return new File(appFilesDirectory, "leakcanary");
   }
 
+  // 创建并返回文件是否可写
   private boolean directoryWritableAfterMkdirs(File directory) {
     boolean success = directory.mkdirs();
     return (success || directory.exists()) && directory.canWrite();
   }
 
+  // 删除比较老的文件的超出7个的部分
   private void cleanupOldHeapDumps() {
+    // 过滤后缀为.hprof的文件
     List<File> hprofFiles = listFiles(new FilenameFilter() {
       @Override public boolean accept(File dir, String filename) {
         return filename.endsWith(HPROF_SUFFIX);
@@ -194,7 +207,7 @@ public final class DefaultLeakDirectoryProvider implements LeakDirectoryProvider
     int filesToRemove = hprofFiles.size() - maxStoredHeapDumps;
     if (filesToRemove > 0) {
       CanaryLog.d("Removing %d heap dumps", filesToRemove);
-      // Sort with oldest modified first.
+      // Sort with oldest modified first.按更新时间旧的排在前面
       Collections.sort(hprofFiles, new Comparator<File>() {
         @Override public int compare(File lhs, File rhs) {
           return Long.valueOf(lhs.lastModified()).compareTo(rhs.lastModified());

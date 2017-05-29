@@ -38,7 +38,7 @@ public final class LeakCanary {
    */
   public static RefWatcher install(Application application) {
     return refWatcher(application).listenerServiceClass(DisplayLeakService.class)
-        .excludedRefs(AndroidExcludedRefs.createAppDefaults().build())
+        .excludedRefs(AndroidExcludedRefs.createAppDefaults().build())   // 添加可忽略的内存泄漏表
         .buildAndInstall();
   }
 
@@ -62,6 +62,7 @@ public final class LeakCanary {
   }
 
   /** Returns a string representation of the result of a heap analysis. */
+  // 返回泄漏到描述
   public static String leakInfo(Context context, HeapDump heapDump, AnalysisResult result,
       boolean detailed) {
     PackageManager packageManager = context.getPackageManager();

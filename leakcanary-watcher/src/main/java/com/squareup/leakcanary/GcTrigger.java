@@ -19,6 +19,7 @@ package com.squareup.leakcanary;
  * Called when a watched reference is expected to be weakly reachable, but hasn't been enqueued
  * in the reference queue yet. This gives the application a hook to run the GC before the {@link
  * RefWatcher} checks the reference queue again, to avoid taking a heap dump if possible.
+ * GC触发器
  */
 public interface GcTrigger {
   GcTrigger DEFAULT = new GcTrigger() {
@@ -33,6 +34,7 @@ public interface GcTrigger {
       System.runFinalization();
     }
 
+    // 系统回收时机无法准确确定，只能做延时处理
     private void enqueueReferences() {
       // Hack. We don't have a programmatic way to wait for the reference queue daemon to move
       // references to the appropriate queues.

@@ -25,6 +25,8 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
+import android.os.Process;
+
 import com.squareup.leakcanary.CanaryLog;
 import com.squareup.leakcanary.R;
 import java.util.List;
@@ -38,6 +40,7 @@ import static android.content.pm.PackageManager.GET_SERVICES;
 import static android.os.Build.VERSION.SDK_INT;
 import static android.os.Build.VERSION_CODES.JELLY_BEAN;
 
+// 辅助工具类
 public final class LeakCanaryInternals {
 
   public static final String SAMSUNG = "samsung";
@@ -73,6 +76,7 @@ public final class LeakCanaryInternals {
     });
   }
 
+  // 设置隐藏或显示组件图标
   public static void setEnabledBlocking(Context appContext, Class<?> componentClass,
       boolean enabled) {
     ComponentName component = new ComponentName(appContext, componentClass);
@@ -130,6 +134,7 @@ public final class LeakCanaryInternals {
     return myProcess.processName.equals(serviceInfo.processName);
   }
 
+  // 显示通知栏，点击后进入RequestStoragePermissionActivity权限请求确认
   public static void showNotification(Context context, CharSequence contentTitle,
       CharSequence contentText, PendingIntent pendingIntent, int notificationId) {
     NotificationManager notificationManager =
@@ -144,7 +149,7 @@ public final class LeakCanaryInternals {
         .setAutoCancel(true)
         .setContentIntent(pendingIntent);
     if (SDK_INT < JELLY_BEAN) {
-      notification = builder.getNotification();
+      notification = builder.getNotification(); // 旧版本使用方式
     } else {
       notification = builder.build();
     }
@@ -155,6 +160,7 @@ public final class LeakCanaryInternals {
     return Executors.newSingleThreadExecutor(new LeakCanarySingleThreadFactory(threadName));
   }
 
+  // 不可构建
   private LeakCanaryInternals() {
     throw new AssertionError();
   }

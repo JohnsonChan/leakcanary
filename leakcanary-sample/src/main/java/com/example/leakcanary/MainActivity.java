@@ -29,20 +29,8 @@ public class MainActivity extends Activity {
 
     View button = findViewById(R.id.async_task);
     button.setOnClickListener(new View.OnClickListener() {
-      int ii = i;
       @Override public void onClick(View v) {
-
         startAsyncTask();
-//        System.out.println("czs======" + i);
-//        new AsyncTask<Void, Void, Void>() {
-//          @Override protected Void doInBackground(Void... params) {
-//            // Do some slow work in background
-//            System.out.println("czs=======" + ii);
-//            System.out.println("czs======" + i);
-//            SystemClock.sleep(20000);
-//            return null;
-//          }
-//        }.execute();
       }
     });
   }

@@ -18,6 +18,7 @@ package com.squareup.leakcanary;
 /**
  * Gives the opportunity to skip checking if a reference is gone when the debugger is connected.
  * An attached debugger might retain references and create false positives.
+ * 判断是否正在调试，如果是的话，调试器可能会保存一些引用，导致得出错误的结果
  */
 public interface DebuggerControl {
   DebuggerControl NONE = new DebuggerControl() {

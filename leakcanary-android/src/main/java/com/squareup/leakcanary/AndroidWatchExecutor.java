@@ -27,6 +27,7 @@ import static com.squareup.leakcanary.Retryable.Result.RETRY;
  * {@link WatchExecutor} suitable for watching Android reference leaks. This executor waits for the
  * main thread to be idle then posts to a serial background thread with the delay specified by
  * {@link AndroidRefWatcherBuilder#watchDelay(long, TimeUnit)}.
+ * 所有都放到
  */
 public final class AndroidWatchExecutor implements WatchExecutor {
 
@@ -45,9 +46,10 @@ public final class AndroidWatchExecutor implements WatchExecutor {
     maxBackoffFactor = Long.MAX_VALUE / initialDelayMillis;
   }
 
+  // 全部最终都放到后台进程LeakCanary-Heap-Dump执行
   @Override public void execute(Retryable retryable) {
     if (Looper.getMainLooper().getThread() == Thread.currentThread()) {
-      waitForIdle(retryable, 0);
+      waitForIdle(retryable, 0); // UI线程
     } else {
       postWaitForIdle(retryable, 0);
     }

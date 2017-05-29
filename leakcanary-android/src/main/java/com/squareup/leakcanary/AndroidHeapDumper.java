@@ -28,10 +28,11 @@ import java.io.File;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+// 主要功能是调用Debug.dumpHprofData(heapDumpFile.getAbsolutePath());将hprof落地
 public final class AndroidHeapDumper implements HeapDumper {
 
   final Context context;
-  private final LeakDirectoryProvider leakDirectoryProvider;
+  private final LeakDirectoryProvider leakDirectoryProvider; // 目录提供者
   private final Handler mainHandler;
 
   public AndroidHeapDumper(Context context, LeakDirectoryProvider leakDirectoryProvider) {
@@ -50,16 +51,19 @@ public final class AndroidHeapDumper implements HeapDumper {
     }
 
     FutureResult<Toast> waitingForToast = new FutureResult<>();
+    // toast这种实现方式是为了避免多个toast显示，一直显示在屏幕，
     showToast(waitingForToast);
 
+    // 只有执行在5秒内执行了waitingForToast才能正常返回
     if (!waitingForToast.wait(5, SECONDS)) {
+      // 5秒等待toast
       CanaryLog.d("Did not dump heap, too much time waiting for Toast.");
       return RETRY_LATER;
     }
 
     Toast toast = waitingForToast.get();
     try {
-      Debug.dumpHprofData(heapDumpFile.getAbsolutePath());
+      Debug.dumpHprofData(heapDumpFile.getAbsolutePath()); // 文件写入
       cancelToast(toast);
       return heapDumpFile;
     } catch (Exception e) {
@@ -76,7 +80,7 @@ public final class AndroidHeapDumper implements HeapDumper {
         toast.setGravity(Gravity.CENTER_VERTICAL, 0, 0);
         toast.setDuration(Toast.LENGTH_LONG);
         LayoutInflater inflater = LayoutInflater.from(context);
-        toast.setView(inflater.inflate(R.layout.leak_canary_heap_dump_toast, null));
+        toast.setView(inflater.inflate(R.layout.leak_canary_heap_dump_toast, null)); // 正在dumping文件
         toast.show();
         // Waiting for Idle to make sure Toast gets rendered.
         Looper.myQueue().addIdleHandler(new MessageQueue.IdleHandler() {

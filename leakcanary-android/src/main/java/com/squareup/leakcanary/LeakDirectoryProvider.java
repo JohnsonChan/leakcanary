@@ -20,6 +20,7 @@ import java.io.FilenameFilter;
 import java.util.List;
 
 /**
+ * 提供dumps堆栈和分析结果存储到路径
  * Provides access to where heap dumps and analysis results will be stored.
  * When using your own implementation, you should also call {@link
  * LeakCanary#setDisplayLeakActivityDirectoryProvider(LeakDirectoryProvider)} to ensure the

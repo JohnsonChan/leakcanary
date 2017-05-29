@@ -117,6 +117,7 @@ public final class DisplayLeakActivity extends Activity {
       }
     }
 
+    // 用这个代替onRestoreInstanceState
     leaks = (List<Leak>) getLastNonConfigurationInstance();
 
     setContentView(R.layout.leak_canary_display_leak);
@@ -128,6 +129,7 @@ public final class DisplayLeakActivity extends Activity {
     updateUi();
   }
 
+  // 用这个代替onSaveInstanceState
   @Override public Object onRetainNonConfigurationInstance() {
     return leaks;
   }

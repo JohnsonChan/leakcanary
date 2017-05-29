@@ -18,6 +18,8 @@ package com.squareup.leakcanary.internal;
 import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Process;
+
 import com.squareup.leakcanary.AbstractAnalysisResultService;
 import com.squareup.leakcanary.AnalysisResult;
 import com.squareup.leakcanary.CanaryLog;
@@ -27,12 +29,14 @@ import com.squareup.leakcanary.HeapDump;
 /**
  * This service runs in a separate process to avoid slowing down the app process or making it run
  * out of memory.
+ * 这个service运用在单独的进程，避免影响被监控app的性能
  */
 public final class HeapAnalyzerService extends IntentService {
 
   private static final String LISTENER_CLASS_EXTRA = "listener_class_extra";
   private static final String HEAPDUMP_EXTRA = "heapdump_extra";
 
+  // 启动HeapAnalyzerService,将结果
   public static void runAnalysis(Context context, HeapDump heapDump,
       Class<? extends AbstractAnalysisResultService> listenerServiceClass) {
     Intent intent = new Intent(context, HeapAnalyzerService.class);
@@ -53,9 +57,11 @@ public final class HeapAnalyzerService extends IntentService {
     String listenerClassName = intent.getStringExtra(LISTENER_CLASS_EXTRA);
     HeapDump heapDump = (HeapDump) intent.getSerializableExtra(HEAPDUMP_EXTRA);
 
+    // 分析堆栈文件
     HeapAnalyzer heapAnalyzer = new HeapAnalyzer(heapDump.excludedRefs);
-
     AnalysisResult result = heapAnalyzer.checkForLeak(heapDump.heapDumpFile, heapDump.referenceKey);
+
+    //将分析结果发送给DisplayLeakService展示
     AbstractAnalysisResultService.sendResultToListener(this, listenerClassName, heapDump, result);
   }
 }
