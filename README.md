@@ -8,11 +8,12 @@
 小漏不补沉大船
 
 使用效果如下图：
+
 ![screenshot.png](assets/screenshot.png)
 
 ## 接入步骤如下：
 
-在 `build.gradle`添加:
+在你项目对应 `build.gradle`添加:
 
 ```gradle
  dependencies {
@@ -22,7 +23,7 @@
  }
 ```
 
-在你项目里的 `Application` 添加初始化:
+在你项目对应 `Application` 添加初始化:
 
 ```java
 public class ExampleApplication extends Application {
@@ -44,7 +45,10 @@ public class ExampleApplication extends Application {
 
 ![icon_512.png](assets/icon_512.png)
 
-###[Java对象的强、软、弱和虚引用](http://blog.csdn.net/coolwxb/article/details/7939246)
+## LeakCanray实现原理
+
+### [Java对象的强、软、弱和虚引用](http://blog.csdn.net/coolwxb/article/details/7939246)
+
 ⑴**强引用**（StrongReference）
 强引用是使用最普遍的引用。如果一个对象具有强引用，那垃圾回收器绝不会回收它。当内存空间不足，Java虚拟机宁愿抛出OutOfMemoryError错误，使程序异常终止，也不会靠随意回收具有强引用的对象来解决内存不足的问题。
 
