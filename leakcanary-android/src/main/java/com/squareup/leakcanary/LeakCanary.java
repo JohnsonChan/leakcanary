@@ -35,9 +35,11 @@ public final class LeakCanary {
   /**
    * Creates a {@link RefWatcher} that works out of the box, and starts watching activity
    * references (on ICS+).
+   * LeakCanary在主进程中初始化的方法
    */
   public static RefWatcher install(Application application) {
-    return refWatcher(application).listenerServiceClass(DisplayLeakService.class)
+    return refWatcher(application)
+            .listenerServiceClass(DisplayLeakService.class) // 设置显示泄漏提示的Service
         .excludedRefs(AndroidExcludedRefs.createAppDefaults().build())   // 添加可忽略的内存泄漏表
         .buildAndInstall();
   }
@@ -47,6 +49,7 @@ public final class LeakCanary {
     return new AndroidRefWatcherBuilder(context);
   }
 
+  // 设置能显示泄漏Activity
   public static void enableDisplayLeakActivity(Context context) {
     setEnabled(context, DisplayLeakActivity.class, true);
   }
@@ -55,6 +58,7 @@ public final class LeakCanary {
    * If you build a {@link RefWatcher} with a {@link AndroidHeapDumper} that has a custom {@link
    * LeakDirectoryProvider}, then you should also call this method to make sure the activity in
    * charge of displaying leaks can find those on the file system.
+   * // 设置堆栈存储地址的提供者（可自定义）
    */
   public static void setDisplayLeakActivityDirectoryProvider(
       LeakDirectoryProvider leakDirectoryProvider) {
@@ -62,7 +66,7 @@ public final class LeakCanary {
   }
 
   /** Returns a string representation of the result of a heap analysis. */
-  // 返回泄漏到描述
+  // 返回泄漏描述
   public static String leakInfo(Context context, HeapDump heapDump, AnalysisResult result,
       boolean detailed) {
     PackageManager packageManager = context.getPackageManager();
@@ -141,11 +145,13 @@ public final class LeakCanary {
   /**
    * Whether the current process is the process running the {@link HeapAnalyzerService}, which is
    * a different process than the normal app process.
+   * 判断当前进程是否是堆栈分析进程
    */
   public static boolean isInAnalyzerProcess(Context context) {
     return isInServiceProcess(context, HeapAnalyzerService.class);
   }
 
+  // 一种避免类被创建的方式
   private LeakCanary() {
     throw new AssertionError();
   }

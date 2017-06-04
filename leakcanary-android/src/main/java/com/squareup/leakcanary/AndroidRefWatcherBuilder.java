@@ -22,6 +22,7 @@ public final class AndroidRefWatcherBuilder extends RefWatcherBuilder<AndroidRef
   /**
    * Sets a custom {@link AbstractAnalysisResultService} to listen to analysis results. This
    * overrides any call to {@link #heapDumpListener(HeapDump.Listener)}.
+   * // 设置内存泄漏结果分析的Service
    */
   public AndroidRefWatcherBuilder listenerServiceClass(
       Class<? extends AbstractAnalysisResultService> listenerServiceClass) {

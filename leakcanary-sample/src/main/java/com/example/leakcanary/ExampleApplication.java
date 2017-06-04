@@ -28,7 +28,7 @@ public class ExampleApplication extends Application {
     if (LeakCanary.isInAnalyzerProcess(this)) {
       // This process is dedicated to LeakCanary for heap analysis.
       // You should not init your app in this process.
-      // 这个进程主要用于LeakCanary做堆栈分析，我们app的业务逻辑不能运行在这里
+      // 这个进程主要用于LeakCanary做堆栈分析，我们app的业务逻辑不能运行在这里,直接return
       // release环境的LeakCanary,LeakCanary.isInAnalyzerProcess(this)直接返回false
       return;
     }
