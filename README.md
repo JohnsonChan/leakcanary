@@ -9,7 +9,7 @@
 
 使用效果如下图：
 
-![screenshot.png](assets/screenshot.png)
+![demo效果截图.png](https://github.com/JohnsonChan/leakcanary/blob/decode-leakcanary/assets/screenshot.png?raw=true)
 
 ## 接入步骤如下：
 
@@ -43,7 +43,7 @@ public class ExampleApplication extends Application {
 
 **接入完成!** LeakCanary在发现内存泄漏的时候会弹出通直栏以及创建一个快捷方式，每个泄漏对应一个快捷方式，快捷方式图标图标如下：[有问题请点击](https://github.com/square/leakcanary/wiki/FAQ)!
 
-![icon_512.png](assets/icon_512.png)
+![内存泄露图标.png](https://github.com/JohnsonChan/leakcanary/blob/decode-leakcanary/assets/icon_512.png?raw=true)
 
 ## LeakCanray实现原理
 
@@ -78,13 +78,136 @@ Application通过此接口提供了一套回调方法，用于让开发者对Act
 **虚引用（PhantomReference）**
 “虚引用”顾名思义，就是形同虚设，与其他几种引用都不同，虚引用并不会决定对象的生命周期。如果一个对象仅持有虚引用，那么它就和没有任何引用一样，在任何时候都可能被垃圾回收器回收。虚引用主要用来跟踪对象被垃圾回收器回收的活动。虚引用与软引用和弱引用的一个区别在于：虚引用必须和引用队列 （ReferenceQueue）联合使用。当垃圾回收器准备回收一个对象时，如果发现它还有虚引用，就会在回收对象的内存之前，把这个虚引用加入到与之 关联的引用队列中。
 
+### 工作机制
+####在`LeakCannary`检测泄露主要分三步:
+**1.关联需要监听的对象** [**leakcanary-android**](https://github.com/JohnsonChan/leakcanary/tree/master/leakcanary-android)
+**2.检测监听对象是否存在泄露嫌疑，如果存在嫌疑，就`dump`出内存快照到`*.hprof`文件** [**leakcanary-watcher**](https://github.com/JohnsonChan/leakcanary/tree/master/leakcanary-watcher) 
+**3.通过分析`*.hprof`文件确认是否真正泄露，泄露了就保存并展示结果** [**leakcanary-analyzer**](https://github.com/JohnsonChan/leakcanary/tree/master/leakcanary-analyzer)
+
+####[关联监听对象](https://github.com/JohnsonChan/leakcanary/blob/decode-leakcanary/leakcanary-android/src/main/java/com/squareup/leakcanary/ActivityRefWatcher.java)
+默认情况下，我们监听的是项目里的Activity.
+利用ActivityLifecycleCallbacks的监听所有Activity生命周期，在Activity被销毁时进行泄露检测
+```java
+private final Application.ActivityLifecycleCallbacks lifecycleCallbacks =
+      new Application.ActivityLifecycleCallbacks() {
+        @Override public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+        }
+
+        @Override public void onActivityStarted(Activity activity) {
+        }
+
+        @Override public void onActivityResumed(Activity activity) {
+        }
+
+        @Override public void onActivityPaused(Activity activity) {
+        }
+
+        @Override public void onActivityStopped(Activity activity) {
+        }
+
+        @Override public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
+        }
+
+        @Override public void onActivityDestroyed(Activity activity) {
+            // 最关键的，activity被销毁时，进行检查
+          ActivityRefWatcher.this.onActivityDestroyed(activity);
+        }
+      };
+```
+
+我们也可以使用[RefWatcher](https://github.com/JohnsonChan/leakcanary/blob/master/leakcanary-watcher/src/main/java/com/squareup/leakcanary/RefWatcher.java)关联其他任何我们想要监听的对象：
+```java
+// 使用 RefWatcher 监控 Fragment：
+public abstract class BaseFragment extends Fragment {
+
+  @Override public void onDestroy() {
+    super.onDestroy();
+    RefWatcher refWatcher = ExampleApplication.getRefWatcher(getActivity());
+    refWatcher.watch(this); // watch传入的是Object对象
+  }
+}
+```
+
+####[确认是否进行分析](https://github.com/JohnsonChan/leakcanary/blob/master/leakcanary-watcher/src/main/java/com/squareup/leakcanary/RefWatcher.java)
+我们知道**弱引用可以和一个引用队列（ReferenceQueue）联合使用，如果弱引用所引用的对象被垃圾回收，Java虚拟机就会把这个弱引用加入到与之关联的引用队列中。**
+LeakCanary利用弱引用这个特性，将要监听的对象和ReferenceQueue队列联合使用，如果对象被垃圾系统回收，就会放到队列里，就可以利用这个队列找出没有被回收的对象，如下面的`removeWeaklyReachableReferences()`
+```java
+// 这个方法执行完，retainedKeys列表里就剩下没有被系统回收的
+private void removeWeaklyReachableReferences() {
+    // WeakReferences are enqueued as soon as the object to which they point to becomes weakly
+    // reachable. This is before finalization or garbage collection has actually happened.
+    KeyedWeakReference ref;
+    while ((ref = (KeyedWeakReference) queue.poll()) != null) {
+      retainedKeys.remove(ref.key); // 删除已经被系统回收
+    }
+  }
+```
+
+下面看完整的流程，主要在`ensureGone()`里
+```java
+Retryable.Result ensureGone(final KeyedWeakReference reference, final long watchStartNanoTime) {
+    long gcStartNanoTime = System.nanoTime();
+    long watchDurationMs = NANOSECONDS.toMillis(gcStartNanoTime - watchStartNanoTime);
+
+    // 1.删除已经被系统回收的对象
+    removeWeaklyReachableReferences(); 
+
+    if (debuggerControl.isDebuggerAttached()) {
+      // The debugger can create false leaks.
+      return RETRY;
+    }
+    // 2.判断没被回收的列表retainedKeys是否有reference对象
+    if (gone(reference)) {
+      return DONE;
+    }
+    // 3.调用gc
+    gcTrigger.runGc();
+    // 4.再次删除已经被系统回收的对象
+    removeWeaklyReachableReferences();
+    if (!gone(reference)) {
+      // 5.retainedKeys列表里存在reference对象，存在泄漏嫌疑
+      long startDumpHeap = System.nanoTime();
+      long gcDurationMs = NANOSECONDS.toMillis(startDumpHeap - gcStartNanoTime);
+      // 6.dump出内存快照到*.hprof文件
+      File heapDumpFile = heapDumper.dumpHeap();
+      if (heapDumpFile == RETRY_LATER) {
+        // Could not dump the heap.
+        return RETRY;
+      }
+      long heapDumpDurationMs = NANOSECONDS.toMillis(System.nanoTime() - startDumpHeap);
+      // 7.触发对.hprof文件进行分析
+      heapdumpListener.analyze(
+          new HeapDump(heapDumpFile, reference.key, reference.name, excludedRefs, watchDurationMs,
+              gcDurationMs, heapDumpDurationMs));
+    }
+    return DONE;
+  }
+
+  private boolean gone(KeyedWeakReference reference) {
+    return !retainedKeys.contains(reference.key);
+  }
+```
+
+
+
+风格：
+1、所有接口内部都有个一个默认的实现
+2、final类
+3、没有util,Preconditions,AndroidDebuggerControl
+4、import方式import static com.squareup.leakcanary.AnalysisResult.leakDetected
+
+
+
+
+###[分析*.hprof文件确认](https://github.com/JohnsonChan/leakcanary/blob/master/leakcanary-android/src/main/java/com/squareup/leakcanary/internal/HeapAnalyzerService.java)
+
+
 
 
 ### 时序图
-**泄漏监听时序图**
 
-![泄漏监听时序图.jpg](assets/泄漏监听时序图.jpg)
+![泄漏监听时序图.jpg](https://github.com/JohnsonChan/leakcanary/blob/decode-leakcanary/assets/%E6%B3%84%E6%BC%8F%E7%9B%91%E5%90%AC%E6%97%B6%E5%BA%8F%E5%9B%BE.jpg?raw=true)
 
-**泄漏处理时序图**
+![泄漏处理时序图.jpg](https://github.com/JohnsonChan/leakcanary/blob/decode-leakcanary/assets/%E6%B3%84%E6%BC%8F%E5%A4%84%E7%90%86%E6%97%B6%E5%BA%8F%E5%9B%BE.jpg?raw=true)
 
-![泄漏处理时序图.jpg](assets/泄漏处理时序图.jpg)
+###未完待续。。。
