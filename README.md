@@ -79,12 +79,14 @@ Application通过此接口提供了一套回调方法，用于让开发者对Act
 “虚引用”顾名思义，就是形同虚设，与其他几种引用都不同，虚引用并不会决定对象的生命周期。如果一个对象仅持有虚引用，那么它就和没有任何引用一样，在任何时候都可能被垃圾回收器回收。虚引用主要用来跟踪对象被垃圾回收器回收的活动。虚引用与软引用和弱引用的一个区别在于：虚引用必须和引用队列 （ReferenceQueue）联合使用。当垃圾回收器准备回收一个对象时，如果发现它还有虚引用，就会在回收对象的内存之前，把这个虚引用加入到与之 关联的引用队列中。
 
 ### 工作机制
-####在`LeakCannary`检测泄露主要分三步:
+#### 在`LeakCannary`检测泄露主要分三步:
 **1.关联需要监听的对象** [**leakcanary-android**](https://github.com/JohnsonChan/leakcanary/tree/master/leakcanary-android)
+
 **2.检测监听对象是否存在泄露嫌疑，如果存在嫌疑，就`dump`出内存快照到`*.hprof`文件** [**leakcanary-watcher**](https://github.com/JohnsonChan/leakcanary/tree/master/leakcanary-watcher) 
+
 **3.通过分析`*.hprof`文件确认是否真正泄露，泄露了就保存并展示结果** [**leakcanary-analyzer**](https://github.com/JohnsonChan/leakcanary/tree/master/leakcanary-analyzer)
 
-####[关联监听对象](https://github.com/JohnsonChan/leakcanary/blob/decode-leakcanary/leakcanary-android/src/main/java/com/squareup/leakcanary/ActivityRefWatcher.java)
+#### [关联监听对象](https://github.com/JohnsonChan/leakcanary/blob/decode-leakcanary/leakcanary-android/src/main/java/com/squareup/leakcanary/ActivityRefWatcher.java)
 默认情况下，我们监听的是项目里的Activity.
 利用ActivityLifecycleCallbacks的监听所有Activity生命周期，在Activity被销毁时进行泄露检测
 ```java
@@ -128,7 +130,7 @@ public abstract class BaseFragment extends Fragment {
 }
 ```
 
-####[确认是否进行分析](https://github.com/JohnsonChan/leakcanary/blob/master/leakcanary-watcher/src/main/java/com/squareup/leakcanary/RefWatcher.java)
+#### [确认是否进行分析](https://github.com/JohnsonChan/leakcanary/blob/master/leakcanary-watcher/src/main/java/com/squareup/leakcanary/RefWatcher.java)
 我们知道**弱引用可以和一个引用队列（ReferenceQueue）联合使用，如果弱引用所引用的对象被垃圾回收，Java虚拟机就会把这个弱引用加入到与之关联的引用队列中。**
 LeakCanary利用弱引用这个特性，将要监听的对象和ReferenceQueue队列联合使用，如果对象被垃圾系统回收，就会放到队列里，就可以利用这个队列找出没有被回收的对象，如下面的`removeWeaklyReachableReferences()`
 ```java
