@@ -195,8 +195,38 @@ Retryable.Result ensureGone(final KeyedWeakReference reference, final long watch
 **ServiceHeapDumpListener**实现了`HeapDump.Listener`接口,当`RefWatcher`发现可疑引用的之后，它将`dump`出来的`*.hprof`文件通过`ServiceHeapDumpListener`传递到`HeapAnalyzerService`
 
 **HeapAnalyzerService**它主要是通过`HeapAnalyzer.checkForLeak`分析对象的引用，计算出到GC root的最短强引用路径。然后将分析结果传递给DisplayLeakService
+
 ```java
-AnalysisResult result = heapAnalyzer.checkForLeak(heapDump.heapDumpFile, heapDump.referenceKey);
+public AnalysisResult checkForLeak(File heapDumpFile, String referenceKey) {
+    long analysisStartNanoTime = System.nanoTime();
+    // 判断*.hprof是否存在
+    if (!heapDumpFile.exists()) {
+      Exception exception = new IllegalArgumentException("File does not exist: " + heapDumpFile);
+      return failure(exception, since(analysisStartNanoTime));
+    }
+
+    try {
+      // 利用HAHA（基于MAT的堆栈解析库）将之前dump出来的内存文件解析成Snapshot对象
+      HprofBuffer buffer = new MemoryMappedFileBuffer(heapDumpFile);
+      HprofParser parser = new HprofParser(buffer);
+      Snapshot snapshot = parser.parse(); 
+      deduplicateGcRoots(snapshot);
+
+      // 找到泄露对象，LeakCanary通过被泄漏对象的弱引用来在Snapshot中定位它。
+      // 如果一个对象被泄漏，一定也可以在内存中找到这个对象的弱引用，再通过弱引用对象的referent就可以直接定位被泄漏对象
+      Instance leakingRef = findLeakingReference(referenceKey, snapshot);
+
+      // False alarm, weak reference was cleared in between key check and heap dump.
+      if (leakingRef == null) {
+        return noLeak(since(analysisStartNanoTime));
+      }
+      
+      // 计算出一条有效的到被泄漏对象的最短的引用
+      return findLeakTrace(analysisStartNanoTime, snapshot, leakingRef);
+    } catch (Throwable e) {
+      return failure(e, since(analysisStartNanoTime));
+    }
+  }
 ```
 
 **DisplayLeakService**继承了`AbstractAnalysisResultService`。它主要是用来处理分析结果，将结果写入文件，然后在通知栏报警
@@ -220,3 +250,10 @@ AbstractAnalysisResultService.sendResultToListener(this, listenerClassName, heap
 2、final类
 3、没有util,Preconditions,AndroidDebuggerControl
 4、import方式import static com.squareup.leakcanary.AnalysisResult.leakDetected
+
+### 参考文章
+http://vjson.com/wordpress/leakcanary%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E7%AC%AC%E4%B8%80%E8%AE%B2.html
+http://www.jianshu.com/p/5032c52c6b0a
+http://coolpers.github.io/leakcanary%7Cmat/2015/06/04/LeakCanary-Brief.html
+http://www.jianshu.com/p/481775d198f0
+https://www.liaohuqiu.net/cn/posts/leak-canary-read-me/
