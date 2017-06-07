@@ -253,7 +253,11 @@ AbstractAnalysisResultService.sendResultToListener(this, listenerClassName, heap
 
 ### 参考文章
 http://vjson.com/wordpress/leakcanary%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E7%AC%AC%E4%B8%80%E8%AE%B2.html
+
 http://www.jianshu.com/p/5032c52c6b0a
+
 http://coolpers.github.io/leakcanary%7Cmat/2015/06/04/LeakCanary-Brief.html
+
 http://www.jianshu.com/p/481775d198f0
+
 https://www.liaohuqiu.net/cn/posts/leak-canary-read-me/
