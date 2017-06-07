@@ -86,7 +86,7 @@ Application通过此接口提供了一套回调方法，用于让开发者对Act
 
 **3.通过分析`*.hprof`文件确认是否真正泄露，泄露了就保存并展示结果** [**leakcanary-analyzer**](https://github.com/JohnsonChan/leakcanary/tree/master/leakcanary-analyzer)
 
-#### [关联监听对象](https://github.com/JohnsonChan/leakcanary/blob/decode-leakcanary/leakcanary-android/src/main/java/com/squareup/leakcanary/ActivityRefWatcher.java)
+#### [关联监听对象关键类ActivityRefWatcher](https://github.com/JohnsonChan/leakcanary/blob/decode-leakcanary/leakcanary-android/src/main/java/com/squareup/leakcanary/ActivityRefWatcher.java)
 默认情况下，我们监听的是项目里的Activity.
 利用ActivityLifecycleCallbacks的监听所有Activity生命周期，在Activity被销毁时进行泄露检测
 ```java
@@ -130,15 +130,16 @@ public abstract class BaseFragment extends Fragment {
 }
 ```
 
-#### [确认是否进行分析](https://github.com/JohnsonChan/leakcanary/blob/master/leakcanary-watcher/src/main/java/com/squareup/leakcanary/RefWatcher.java)
+#### [确认是否进行分析，关键类RefWatcher](https://github.com/JohnsonChan/leakcanary/blob/master/leakcanary-watcher/src/main/java/com/squareup/leakcanary/RefWatcher.java)
 我们知道**弱引用可以和一个引用队列（ReferenceQueue）联合使用，如果弱引用所引用的对象被垃圾回收，Java虚拟机就会把这个弱引用加入到与之关联的引用队列中。**
-LeakCanary利用弱引用这个特性，将要监听的对象和ReferenceQueue队列联合使用，如果对象被垃圾系统回收，就会放到队列里，就可以利用这个队列找出没有被回收的对象，如下面的`removeWeaklyReachableReferences()`
+LeakCanary利用弱引用这个特性，将要监听的对象和ReferenceQueue队列联合使用，如果对象被垃圾系统回收，就会放到队列里，就可以利用这个队列找出没有被回收的对象，没有被回收的则怀疑可能发生了内存泄露，如下面的`removeWeaklyReachableReferences()`
 ```java
 // 这个方法执行完，retainedKeys列表里就剩下没有被系统回收的
 private void removeWeaklyReachableReferences() {
     // WeakReferences are enqueued as soon as the object to which they point to becomes weakly
     // reachable. This is before finalization or garbage collection has actually happened.
-    KeyedWeakReference ref;
+    // queue里装的都算被垃圾系统回收的
+    KeyedWeakReference ref;
     while ((ref = (KeyedWeakReference) queue.poll()) != null) {
       retainedKeys.remove(ref.key); // 删除已经被系统回收
     }
@@ -190,26 +191,32 @@ Retryable.Result ensureGone(final KeyedWeakReference reference, final long watch
   }
 ```
 
+### [分析*.hprof文件，找到泄露对象，并展示](https://github.com/JohnsonChan/leakcanary/blob/master/leakcanary-android/src/main/java/com/squareup/leakcanary/internal/HeapAnalyzerService.java)
+**ServiceHeapDumpListener**实现了`HeapDump.Listener`接口,当`RefWatcher`发现可疑引用的之后，它将`dump`出来的`*.hprof`文件通过`ServiceHeapDumpListener`传递到`HeapAnalyzerService`
 
+**HeapAnalyzerService**它主要是通过`HeapAnalyzer.checkForLeak`分析对象的引用，计算出到GC root的最短强引用路径。然后将分析结果传递给DisplayLeakService
+```java
+AnalysisResult result = heapAnalyzer.checkForLeak(heapDump.heapDumpFile, heapDump.referenceKey);
+```
 
-风格：
-1、所有接口内部都有个一个默认的实现
-2、final类
-3、没有util,Preconditions,AndroidDebuggerControl
-4、import方式import static com.squareup.leakcanary.AnalysisResult.leakDetected
+**DisplayLeakService**继承了`AbstractAnalysisResultService`。它主要是用来处理分析结果，将结果写入文件，然后在通知栏报警
+```java
+// listenerClassName对应的就是DisplayLeakService
+AbstractAnalysisResultService.sendResultToListener(this, listenerClassName, heapDump, result);
+```
 
-
-
-
-###[分析*.hprof文件确认](https://github.com/JohnsonChan/leakcanary/blob/master/leakcanary-android/src/main/java/com/squareup/leakcanary/internal/HeapAnalyzerService.java)
-
-
-
-
-### 时序图
+### 下面是以上步骤的时序图
 
 ![泄漏监听时序图.jpg](https://github.com/JohnsonChan/leakcanary/blob/decode-leakcanary/assets/%E6%B3%84%E6%BC%8F%E7%9B%91%E5%90%AC%E6%97%B6%E5%BA%8F%E5%9B%BE.jpg?raw=true)
 
 ![泄漏处理时序图.jpg](https://github.com/JohnsonChan/leakcanary/blob/decode-leakcanary/assets/%E6%B3%84%E6%BC%8F%E5%A4%84%E7%90%86%E6%97%B6%E5%BA%8F%E5%9B%BE.jpg?raw=true)
 
-###未完待续。。。
+### 其他说明
+`LeakCanary`提供了`ExcludedRefs`来灵活控制是否需要将一些对象排除在考虑之外，因为在`Android Framework`,手机厂商rom自身也存在一些内存泄漏，对于开发者来说这些泄漏是我们无能为力的，所以在`AndroidExcludedRefs`中定义了很多排除考虑的类
+
+### 未完待续。。。
+风格：
+1、所有接口内部都有个一个默认的实现
+2、final类
+3、没有util,Preconditions,AndroidDebuggerControl
+4、import方式import static com.squareup.leakcanary.AnalysisResult.leakDetected
