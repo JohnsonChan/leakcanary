@@ -253,6 +253,7 @@ AbstractAnalysisResultService.sendResultToListener(this, listenerClassName, heap
 
 
 风格：
+
 1、所有接口内部都有个一个默认的实现
 
 2、final类
