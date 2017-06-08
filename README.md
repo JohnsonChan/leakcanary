@@ -254,13 +254,15 @@ AbstractAnalysisResultService.sendResultToListener(this, listenerClassName, heap
 
 风格：
 
-1、所有接口内部都有个一个默认的实现
+1、所有接口内部都个默认的实现
 
 2、final类
 
-3、没有util,Preconditions,AndroidDebuggerControl
+3、没有util,用final类来代替，如Preconditions,AndroidDebuggerControl
 
 4、import方式import static com.squareup.leakcanary.AnalysisResult.leakDetected
+
+5.glide一样用builder.xx().xx()方式
 
 ### 参考文章
 http://vjson.com/wordpress/leakcanary%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E7%AC%AC%E4%B8%80%E8%AE%B2.html
