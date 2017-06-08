@@ -105,30 +105,36 @@ public final class RefWatcher {
     long gcStartNanoTime = System.nanoTime();
     long watchDurationMs = NANOSECONDS.toMillis(gcStartNanoTime - watchStartNanoTime);
 
-    removeWeaklyReachableReferences(); // 清理掉被回收被放入队列的Activity
+    // 1.删除已经被系统回收的对象
+    removeWeaklyReachableReferences();
 
     if (debuggerControl.isDebuggerAttached()) {
       // The debugger can create false leaks.
       return RETRY;
     }
-    if (gone(reference)) { // 判断key列表里是否还存在，存在说明还没被回收，不存在说明被回收了。
+    // 2.判断没被回收的列表retainedKeys是否有reference对象
+    if (gone(reference)) {
       return DONE;
     }
+    // 3.调用gc
     gcTrigger.runGc();
-    removeWeaklyReachableReferences(); // gc后再清理掉被回收被放入队列的Activity
-    if (!gone(reference)) { // 如果发现activity对应的key还在，正式确定没被回收，内存泄漏了，进入堆栈分析
+    // 4.再次删除已经被系统回收的对象
+    removeWeaklyReachableReferences();
+    if (!gone(reference)) {
+      // 5.retainedKeys列表里存在reference对象，存在泄漏嫌疑
       long startDumpHeap = System.nanoTime();
       long gcDurationMs = NANOSECONDS.toMillis(startDumpHeap - gcStartNanoTime);
-
+      // 6.dump出内存快照到*.hprof文件
       File heapDumpFile = heapDumper.dumpHeap();
       if (heapDumpFile == RETRY_LATER) {
         // Could not dump the heap.
         return RETRY;
       }
       long heapDumpDurationMs = NANOSECONDS.toMillis(System.nanoTime() - startDumpHeap);
+      // 7.触发对.hprof文件进行分析
       heapdumpListener.analyze(
-          new HeapDump(heapDumpFile, reference.key, reference.name, excludedRefs, watchDurationMs,
-              gcDurationMs, heapDumpDurationMs));
+              new HeapDump(heapDumpFile, reference.key, reference.name, excludedRefs, watchDurationMs,
+                      gcDurationMs, heapDumpDurationMs));
     }
     return DONE;
   }
@@ -137,7 +143,7 @@ public final class RefWatcher {
     return !retainedKeys.contains(reference.key);
   }
 
-  // 删除可触及状态的弱应用？
+  // 这个方法执行完，retainedKeys列表里就剩下没有被系统回收的
   private void removeWeaklyReachableReferences() {
     // WeakReferences are enqueued as soon as the object to which they point to becomes weakly
     // reachable. This is before finalization or garbage collection has actually happened.

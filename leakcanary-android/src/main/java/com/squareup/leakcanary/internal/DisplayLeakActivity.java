@@ -423,6 +423,7 @@ public final class DisplayLeakActivity extends Activity {
     }
   }
 
+  // 加载*.result文件列表，用于显示
   static class LoadLeaks implements Runnable {
 
     static final List<LoadLeaks> inFlight = new ArrayList<>();

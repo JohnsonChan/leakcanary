@@ -101,18 +101,21 @@ public final class HeapAnalyzer {
    */
   public AnalysisResult checkForLeak(File heapDumpFile, String referenceKey) {
     long analysisStartNanoTime = System.nanoTime();
-
+    // 判断*.hprof是否存在
     if (!heapDumpFile.exists()) {
       Exception exception = new IllegalArgumentException("File does not exist: " + heapDumpFile);
       return failure(exception, since(analysisStartNanoTime));
     }
 
     try {
+      // 利用HAHA（基于MAT的堆栈解析库）将之前dump出来的内存文件解析成Snapshot对象
       HprofBuffer buffer = new MemoryMappedFileBuffer(heapDumpFile);
       HprofParser parser = new HprofParser(buffer);
       Snapshot snapshot = parser.parse();
       deduplicateGcRoots(snapshot);
 
+      // 找到泄露对象，LeakCanary通过被泄漏对象的弱引用来在Snapshot中定位它。
+      // 如果一个对象被泄漏，一定也可以在内存中找到这个对象的弱引用，再通过弱引用对象的referent就可以直接定位被泄漏对象
       Instance leakingRef = findLeakingReference(referenceKey, snapshot);
 
       // False alarm, weak reference was cleared in between key check and heap dump.
@@ -120,6 +123,7 @@ public final class HeapAnalyzer {
         return noLeak(since(analysisStartNanoTime));
       }
 
+      // 计算出一条有效的到被泄漏对象的最短的引用
       return findLeakTrace(analysisStartNanoTime, snapshot, leakingRef);
     } catch (Throwable e) {
       return failure(e, since(analysisStartNanoTime));
@@ -154,6 +158,7 @@ public final class HeapAnalyzer {
     return String.format("%s@0x%08x", root.getRootType().getName(), root.getId());
   }
 
+  // 利用key从快照里找出对应泄漏的实例
   private Instance findLeakingReference(String key, Snapshot snapshot) {
     ClassObj refClass = snapshot.findClass(KeyedWeakReference.class.getName());
     List<String> keysFound = new ArrayList<>();
@@ -251,6 +256,7 @@ public final class HeapAnalyzer {
     }
   }
 
+  // 从泄漏点往上寻址到GC root, 将其中的每一个点取出添加到列表
   private LeakTrace buildLeakTrace(LeakNode leakingNode) {
     List<LeakTraceElement> elements = new ArrayList<>();
     // We iterate from the leak to the GC root
@@ -265,6 +271,7 @@ public final class HeapAnalyzer {
     return new LeakTrace(elements);
   }
 
+  // 将LeakNode转换成LeakTrace
   private LeakTraceElement buildLeakElement(LeakNode node) {
     if (node.parent == null) {
       // Ignore any root node.

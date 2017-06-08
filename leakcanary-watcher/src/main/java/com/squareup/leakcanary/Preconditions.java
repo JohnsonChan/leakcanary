@@ -15,7 +15,7 @@
  */
 package com.squareup.leakcanary;
 
-// 先决条件
+// 先决条件，类似于Util的
 final class Preconditions {
 
   /**

@@ -92,25 +92,32 @@ Application通过此接口提供了一套回调方法，用于让开发者对Act
 ```java
 private final Application.ActivityLifecycleCallbacks lifecycleCallbacks =
       new Application.ActivityLifecycleCallbacks() {
-        @Override public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+        @Override
+        public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
         }
 
-        @Override public void onActivityStarted(Activity activity) {
+        @Override
+        public void onActivityStarted(Activity activity) {
         }
 
-        @Override public void onActivityResumed(Activity activity) {
+        @Override
+        public void onActivityResumed(Activity activity) {
         }
 
-        @Override public void onActivityPaused(Activity activity) {
+        @Override
+        public void onActivityPaused(Activity activity) {
         }
 
-        @Override public void onActivityStopped(Activity activity) {
+        @Override
+        public void onActivityStopped(Activity activity) {
         }
 
-        @Override public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
+        @Override
+        public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
         }
 
-        @Override public void onActivityDestroyed(Activity activity) {
+        @Override
+        public void onActivityDestroyed(Activity activity) {
             // 最关键的，activity被销毁时，进行检查
           ActivityRefWatcher.this.onActivityDestroyed(activity);
         }
@@ -121,8 +128,8 @@ private final Application.ActivityLifecycleCallbacks lifecycleCallbacks =
 ```java
 // 使用 RefWatcher 监控 Fragment：
 public abstract class BaseFragment extends Fragment {
-
-  @Override public void onDestroy() {
+  @Override
+  public void onDestroy() {
     super.onDestroy();
     RefWatcher refWatcher = ExampleApplication.getRefWatcher(getActivity());
     refWatcher.watch(this); // watch传入的是Object对象
@@ -244,11 +251,14 @@ AbstractAnalysisResultService.sendResultToListener(this, listenerClassName, heap
 ### 其他说明
 `LeakCanary`提供了`ExcludedRefs`来灵活控制是否需要将一些对象排除在考虑之外，因为在`Android Framework`,手机厂商rom自身也存在一些内存泄漏，对于开发者来说这些泄漏是我们无能为力的，所以在`AndroidExcludedRefs`中定义了很多排除考虑的类
 
-### 未完待续。。。
+
 风格：
 1、所有接口内部都有个一个默认的实现
+
 2、final类
+
 3、没有util,Preconditions,AndroidDebuggerControl
+
 4、import方式import static com.squareup.leakcanary.AnalysisResult.leakDetected
 
 ### 参考文章
