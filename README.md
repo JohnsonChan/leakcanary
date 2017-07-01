@@ -274,3 +274,12 @@ http://coolpers.github.io/leakcanary%7Cmat/2015/06/04/LeakCanary-Brief.html
 http://www.jianshu.com/p/481775d198f0
 
 https://www.liaohuqiu.net/cn/posts/leak-canary-read-me/
+
+
+
+http://blog.csdn.net/qq744746842/article/details/50374066
+http://blog.csdn.net/yutao52shi/article/details/50055669
+http://www.2cto.com/kf/201605/506133.html
+http://blog.csdn.net/zxm317122667/article/details/52162764
+http://blog.csdn.net/aaa2832/article/details/19419679/
+http://www.th7.cn/Program/Android/201602/764859.shtml
